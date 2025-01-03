@@ -1,6 +1,6 @@
 {
   "/proxyapi": {
-    "target": "https://api-internal.sandbox.mosip.slashsuite.com/v1/",
+    "target": "https://dev-api-internal.identity.gov.to/v1/",
     "secure": true,
     "changeOrigin": true,
     "pathRewrite": {
