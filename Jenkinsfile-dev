@@ -1,0 +1,82 @@
+pipeline {
+  environment {
+   	 PROJECT = "egovdigitaltonga"
+ 	   APP_NAME = "mosip-admin-ui"
+     BRANCH_NAME = "deployment_dev"
+     //CIR = "docker.io"
+      CIR_USER = 'kajakaran095'
+      CIR_PW = credentials('cir-pw')
+      KUB_NAMESPACE = "admin"
+      IMAGE_TAG = "${PROJECT}/${APP_NAME}:${BRANCH_NAME}.${env.BUILD_NUMBER}"
+                }
+    agent none
+    options {
+        skipStagesAfterUnstable()
+        disableConcurrentBuilds()
+    }
+    stages {  
+      stage('Build & test') {
+        agent {
+                docker {
+           image 'node:14.21.3'
+           args '-u root'
+     }
+            }
+         steps {
+            dir('admin-ui'){
+              sh 'rm -rf dist/'
+              sh 'npm install'
+              sh 'npm run build'
+}
+         
+              
+          }
+        }  
+		stage('Building & Deploy Image') {
+      agent any
+		    steps{
+          sh 'docker login -u ${CIR_USER} -p ${CIR_PW}'
+          dir('admin-ui'){
+         // sh 'mkdir -p dockerImage/dist/'
+					//sh 'cp Dockerfile dockerImage/'
+					//sh 'cp -R dist/* dockerImage/dist/'
+         //  sh 'cp -R node_modules dockerImage/'
+           //sh 'cp .env dockerImage/'
+					sh 'docker build --tag=${IMAGE_TAG} .'
+				        
+					sh 'docker push ${IMAGE_TAG}'
+          sh 'docker image rm ${IMAGE_TAG}'
+         // sh 'rm -rf dockerImage/'
+        }
+        }
+        }
+        stage('Deploy cluster') {
+              agent {
+                 docker {
+                       image 'inovadockerimages/cicdtools:latest' 
+                         args '--entrypoint="" -v /root/.kube:/root/.kube'   
+                        }
+		}
+             steps {
+           
+                sh 'kubectl set image deployment/admin-ui  admin-ui=${IMAGE_TAG}  --record -n ${KUB_NAMESPACE}'
+                  }
+        }
+            }
+            post {
+            success {
+              mail to: 'kajakaran.thayaparan@bevolv.co',
+                         subject: "${env.JOB_NAME} - Build  ${env.BUILD_NUMBER} - Success!",
+                       body: """${env.JOB_NAME} - Build  ${env.BUILD_NUMBER} - Success:
+                             Check console output at ${env.BUILD_URL} to view the results."""
+                    }
+            failure {
+                   mail to: "kajakaran.thayaparan@bevolv.co",
+                   cc: 'kajakaran.thayaparan@bevolv.co',
+                       subject: "${env.JOB_NAME} - Build  ${env.BUILD_NUMBER} - Failed!",
+                        body: """${env.JOB_NAME} - Build  ${env.BUILD_NUMBER} - Failed:
+                             Check console output at ${env.BUILD_URL} to view the results."""
+                  }
+             }
+            
+}
