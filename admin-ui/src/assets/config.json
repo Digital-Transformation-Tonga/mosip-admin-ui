@@ -1,7 +1,7 @@
 {
     "primaryLangCode": "eng",
     "secondaryLangCode": "ara",
-    "baseUrl": "https://api-internal.sandbox.mosip.slashsuite.com/v1/",
+    "baseUrl": "https://dev-api-internal.identity.gov.to/v1/",
     "adminUrl":"/admin-ui/",
     "templateRepoUrl":"/admin-ui/templates/",
     "validateToken": "admin/authorize/admin/validateToken",
